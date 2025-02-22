@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Memory Match Game</title>
+    <style>
+        body {
+           font-family: 'Comic Sans MS', cursive, sans-serif;
+            text-align: center;
+            background: linear-gradient(to bottom, #fbc2eb, #a6c1ee); 
+            background-attachment: fixed; 
+            background-size: cover;
+            margin: 0;
+            padding: 0;
+           
+        }
+        .imgg{
+            background-image:url(img2.webp);
+            background-repeat: no-repeat;
+            background-size:contain;
+            background-position:center ;
+            height: 300px;
+           
+            margin-top: 5px;
+            
+        }
+       
+        .hidden {
+            display: none;
+        }
+        #game-board {
+            display: grid;
+            grid-template-columns: repeat(4, 120px);
+            grid-gap: 15px;
+            justify-content: center;
+            margin-top: 20px;
+            padding: 10px;
+        }
+        .card {
+            width: 120px;
+            height: 120px;
+            background: linear-gradient(135deg, #ccdb40, #45a3c0);
+            border: 3px solid #000000;
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 36px;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.3);
+        }
+        .card:hover {
+            background: linear-gradient(135deg, #ffc107, #ff9800);
+        }
+        .matched {
+            background: linear-gradient(135deg, #e0e24a, #df9019) !important;
+            color: white;
+            box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.5);
+        }
+        button {
+            padding: 12px 24px;
+            font-size: 20px;
+            
+            font-weight: bold;
+            background: linear-gradient(135deg, #dbaf7c, #8f251d);
+            border: 1px solid black;
+            border-radius: 10px;
+            cursor: pointer;
+            color: rgb(255, 255, 255);
+            margin: 15px;
+            transition: all 0.3s;
+            box-shadow: 3px 3px 8px rgba(0, 0, 0, 0.3);
+        }
+        button:hover {
+            background: linear-gradient(135deg, #ddb4c2, #ecacc2);
+        }
+        
+        @media (max-width: 600px) {
+            .imgg{
+            background-image:url(img2.webp);
+            background-repeat: no-repeat;
+            background-size: contain;
+            background-position:center ;
+            height: 250px;
+            margin-top: 5px;
+            
+        }
+           
+            #game-board {
+                display: flex;
+                flex-wrap: wrap;
+                justify-content: center;
+                align-items: center;
+                gap: 5px;
+                width: 100%;
+                max-width: 320px;
+                
+                margin: 0 auto;
+            }
+            .card {
+                width: 70px;
+                height: 70px;
+                font-size: 24px;
+            }
+            button {
+                font-size: 16px;
+                padding: 8px 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="imgg"></div>
+    <div id="landing-page">
+        <h2>🎉 Memory Match Game 🎉</h2>
+        <h3>Select a category:</h3>
+        <button onclick="startGame('fruits')">🍎 Fruits</button>
+        <button onclick="startGame('emojis')">😀 Emojis</button>
+        <button onclick="startGame('animals')">🐶 Animals</button>
+    </div>
+    
+    <div id="game-container" class="hidden">
+        <div id="score-timer">
+            <p>Score: <span id="score">0</span></p>
+            <p>Time Left: <span id="timer">30</span> seconds</p>
+        </div>
+        <div id="game-board"></div>
+        <button id="restart-button" onclick="restartGame()" class="hidden">Restart Game</button>
+    </div>
+    
+    <script>
+        const categories = {
+            fruits: ['🍎', '🍌', '🍒', '🍉', '🍇', '🥭', '🍍', '🥝'],
+            emojis: ['😀', '😂', '😍', '😎', '😜', '😡', '😱', '🤩'],
+            animals: ['🐶', '🐱', '🐭', '🐹', '🐰', '🦊', '🐻', '🐼']
+        };
+
+        let gameBoard = document.getElementById("game-board");
+        let scoreDisplay = document.getElementById("score");
+        let timerDisplay = document.getElementById("timer");
+        let restartButton = document.getElementById("restart-button");
+        let score = 0;
+        let timer;
+        let flippedCards = [];
+
+        function startGame(category) {
+            document.getElementById("landing-page").classList.add("hidden");
+            document.getElementById("game-container").classList.remove("hidden");
+            
+            let items = [...categories[category], ...categories[category]];
+            items.sort(() => Math.random() - 0.5);
+            
+            gameBoard.innerHTML = "";
+            items.forEach(item => {
+                let card = document.createElement("div");
+                card.classList.add("card");
+                card.dataset.value = item;
+                card.addEventListener("click", handleCardClick);
+                gameBoard.appendChild(card);
+            });
+            
+            score = 0;
+            scoreDisplay.textContent = score;
+            startTimer();
+        }
+
+        function handleCardClick(event) {
+            let card = event.target;
+            if (flippedCards.length < 2 && !card.classList.contains("matched") && !card.textContent) {
+                card.textContent = card.dataset.value;
+                flippedCards.push(card);
+            }
+            
+            if (flippedCards.length === 2) {
+                setTimeout(checkMatch, 1000);
+            }
+        }
+
+        function checkMatch() {
+            if (flippedCards[0].dataset.value === flippedCards[1].dataset.value) {
+                flippedCards.forEach(card => card.classList.add("matched"));
+                score += 10;
+                scoreDisplay.textContent = score;
+                if (document.querySelectorAll('.matched').length === document.querySelectorAll('.card').length) {
+                    alert("🎉 Congratulations! You won! 🎉");
+                }
+            } else {
+                flippedCards.forEach(card => card.textContent = "");
+            }
+            flippedCards = [];
+        }
+
+        function startTimer() {
+            let timeLeft = 30;
+            timerDisplay.textContent = timeLeft;
+            timer = setInterval(() => {
+                timeLeft--;
+                timerDisplay.textContent = timeLeft;
+                if (timeLeft === 0) {
+                    clearInterval(timer);
+                    alert("⏳ Time's up! Game Over.");
+                    restartButton.classList.remove("hidden");
+                }
+            }, 1000);
+        }
+
+        function restartGame() {
+            location.reload();
+        }
+    </script>
+</body>
+</html>
