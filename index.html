@@ -125,10 +125,12 @@
         let timerDisplay = document.getElementById("timer");
         let restartButton = document.getElementById("restart-button");
         let startButton = document.getElementById("start-game");
+
         let flipSound = document.getElementById("flip-sound");
         let matchSound = document.getElementById("match-sound");
         let gameOverSound = document.getElementById("gameover-sound");
         let winSound = document.getElementById("win-sound");
+
         let score = 0;
         let timer;
         let timeLeft = 50;
@@ -181,13 +183,11 @@
             let card = event.currentTarget;
             if (flippedCards.length < 2 && !card.classList.contains("matched") && !card.classList.contains("flipped")) {
                 card.classList.add("flipped");
-                card.querySelector(".front").style.display = "block";
-                card.querySelector(".back").style.display = "none";
-                flipSound.play();
+                playSound(flipSound);
                 flippedCards.push(card);
             }
             if (flippedCards.length === 2) {
-                setTimeout(checkMatch, 1000);
+                setTimeout(checkMatch, 800);
             }
         }
 
@@ -196,19 +196,9 @@
                 flippedCards.forEach(card => card.classList.add("matched"));
                 score += 10;
                 scoreDisplay.textContent = score;
-                matchSound.play();
-                if (document.querySelectorAll('.matched').length === document.querySelectorAll('.card').length) {
-                    clearInterval(timer);
-                    winSound.play();
-                    alert("🎉 You win! 🎉");
-                    restartButton.classList.remove("hidden");
-                }
+                playSound(matchSound);
             } else {
-                flippedCards.forEach(card => {
-                    card.classList.remove("flipped");
-                    card.querySelector(".front").style.display = "none";
-                    card.querySelector(".back").style.display = "block";
-                });
+                flippedCards.forEach(card => card.classList.remove("flipped"));
             }
             flippedCards = [];
         }
@@ -220,11 +210,15 @@
                 timerDisplay.textContent = timeLeft;
                 if (timeLeft === 0) {
                     clearInterval(timer);
-                    gameOverSound.play();
+                    playSound(gameOverSound);
                     alert("⏳ Time is up! Try again.");
                     restartButton.classList.remove("hidden");
                 }
             }, 1000);
+        }
+
+        function playSound(sound) {
+            sound.play().catch(() => {});
         }
 
         function restartGame() {
