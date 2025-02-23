@@ -15,9 +15,7 @@
             padding: 0;
             color: white;
         }
-        .hidden {
-            display: none;
-        }
+        .hidden { display: none; }
         #game-board {
             display: grid;
             grid-template-columns: repeat(4, 120px);
@@ -42,20 +40,13 @@
             transform-style: preserve-3d;
             position: relative;
         }
-        .flipped {
-            transform: rotateY(180deg);
-        }
+        .flipped { transform: rotateY(180deg); }
         .card .front, .card .back {
             position: absolute;
             backface-visibility: hidden;
         }
-        .card .front {
-            transform: rotateY(180deg);
-        }
-        .matched {
-            background: linear-gradient(135deg, #e0e24a, #df9019) !important;
-            color: white;
-        }
+        .card .front { transform: rotateY(180deg); }
+        .matched { background: linear-gradient(135deg, #e0e24a, #df9019) !important; color: white; }
         button {
             padding: 12px 24px;
             font-size: 20px;
@@ -68,12 +59,8 @@
             color: white;
             margin: 15px;
         }
-        button:hover {
-            background: linear-gradient(135deg, #ddb4c2, #ecacc2);
-        }
-        .sButton {
-            background-color: #0e1620;
-        }
+        button:hover { background: linear-gradient(135deg, #ddb4c2, #ecacc2); }
+        .sButton { background-color: #0e1620; }
         @media (max-width: 600px) {
             #game-board {
                 grid-template-columns: repeat(4, 80px);
@@ -97,7 +84,7 @@
     <button onclick="chooseCategory('fruits')">🍎 Fruits</button>
     <button onclick="chooseCategory('emojis')">😀 Emojis</button>
     <button onclick="chooseCategory('animals')">🐶 Animals</button>
-
+    
     <div id="game-container" class="hidden">
         <button id="start-game" class="sButton" onclick="startGame()">Start Game</button>
         <div id="score-timer">
@@ -119,23 +106,24 @@
             emojis: ['😀', '😂', '😍', '😎', '😜', '😡', '😱', '🤩'],
             animals: ['🐶', '🐱', '🐭', '🐹', '🐰', '🦊', '🐻', '🐼']
         };
-
+        
         let gameBoard = document.getElementById("game-board");
         let scoreDisplay = document.getElementById("score");
         let timerDisplay = document.getElementById("timer");
         let restartButton = document.getElementById("restart-button");
         let startButton = document.getElementById("start-game");
-
-        let flipSound = document.getElementById("flip-sound");
-        let matchSound = document.getElementById("match-sound");
-        let gameOverSound = document.getElementById("gameover-sound");
-        let winSound = document.getElementById("win-sound");
-
+        let flippedCards = [];
+        let selectedCategory = "";
         let score = 0;
         let timer;
         let timeLeft = 50;
-        let flippedCards = [];
-        let selectedCategory = "";
+        let gameOver = false;
+
+        function playSound(soundId) {
+            let sound = document.getElementById(soundId);
+            sound.currentTime = 0;
+            sound.play();
+        }
 
         function chooseCategory(category) {
             selectedCategory = category;
@@ -150,6 +138,7 @@
             scoreDisplay.textContent = score;
             timerDisplay.textContent = timeLeft;
             flippedCards = [];
+            gameOver = false;
 
             gameBoard.innerHTML = "";
             let items = [...categories[selectedCategory], ...categories[selectedCategory]];
@@ -180,10 +169,12 @@
         }
 
         function handleCardClick(event) {
+            if (gameOver) return;
+
             let card = event.currentTarget;
             if (flippedCards.length < 2 && !card.classList.contains("matched") && !card.classList.contains("flipped")) {
                 card.classList.add("flipped");
-                playSound(flipSound);
+                playSound("flip-sound");
                 flippedCards.push(card);
             }
             if (flippedCards.length === 2) {
@@ -193,12 +184,18 @@
 
         function checkMatch() {
             if (flippedCards[0].dataset.value === flippedCards[1].dataset.value) {
-                flippedCards.forEach(card => card.classList.add("matched"));
-                score += 10;
-                scoreDisplay.textContent = score;
-                playSound(matchSound);
+                flippedCards.forEach(c => c.classList.add("matched"));
+                score += 10; scoreDisplay.textContent = score;
+                playSound("match-sound");
+
+                if (document.querySelectorAll(".matched").length === 16) {
+                    clearInterval(timer);
+                    gameOver = true;
+                    playSound("win-sound");
+                    setTimeout(() => { alert("🎉 You Won! 🎉"); restartButton.classList.remove("hidden"); }, 300);
+                }
             } else {
-                flippedCards.forEach(card => card.classList.remove("flipped"));
+                flippedCards.forEach(c => c.classList.remove("flipped"));
             }
             flippedCards = [];
         }
@@ -206,24 +203,20 @@
         function startTimer() {
             clearInterval(timer);
             timer = setInterval(() => {
-                timeLeft--;
-                timerDisplay.textContent = timeLeft;
-                if (timeLeft === 0) {
-                    clearInterval(timer);
-                    playSound(gameOverSound);
-                    alert("⏳ Time is up! Try again.");
-                    restartButton.classList.remove("hidden");
+                if (!gameOver) {
+                    timeLeft--;
+                    timerDisplay.textContent = timeLeft;
+                    if (timeLeft === 0) {
+                        clearInterval(timer);
+                        playSound("gameover-sound");
+                        alert("⏳ Time is up! Try again.");
+                        restartButton.classList.remove("hidden");
+                    }
                 }
             }, 1000);
         }
 
-        function playSound(sound) {
-            sound.play().catch(() => {});
-        }
-
-        function restartGame() {
-            location.reload();
-        }
+        function restartGame() { location.reload(); }
     </script>
 </body>
 </html>
