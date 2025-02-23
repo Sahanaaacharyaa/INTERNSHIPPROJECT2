@@ -3,29 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Memory Match Game</title>
+    <title>Memory Match Game</title> 
     <style>
         body {
-           font-family: 'Comic Sans MS', cursive, sans-serif;
+            font-family: 'Comic Sans MS', cursive, sans-serif;
             text-align: center;
-            background: linear-gradient(to bottom, #fbc2eb, #a6c1ee); 
+            background: linear-gradient(to bottom, #0e1620, #463d5a);
             background-attachment: fixed; 
             background-size: cover;
             margin: 0;
             padding: 0;
-           
+            color: white;
         }
-        .imgg{
-            background-image:url(img2.webp);
-            background-repeat: no-repeat;
-            background-size:contain;
-            background-position:center ;
-            height: 300px;
-           
-            margin-top: 5px;
-            
-        }
-       
         .hidden {
             display: none;
         }
@@ -41,67 +30,58 @@
             width: 120px;
             height: 120px;
             background: linear-gradient(135deg, #ccdb40, #45a3c0);
-            border: 3px solid #000000;
+            box-shadow: 0 0 30px black;
+            border: 2px solid white;
             border-radius: 15px;
             display: flex;
             align-items: center;
             justify-content: center;
             font-size: 36px;
             cursor: pointer;
-            transition: all 0.3s;
-            box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.3);
+            transition: transform 0.6s;
+            transform-style: preserve-3d;
+            position: relative;
         }
-        .card:hover {
-            background: linear-gradient(135deg, #ffc107, #ff9800);
+        .flipped {
+            transform: rotateY(180deg);
+        }
+        .card .front, .card .back {
+            position: absolute;
+            backface-visibility: hidden;
+        }
+        .card .front {
+            transform: rotateY(180deg);
         }
         .matched {
             background: linear-gradient(135deg, #e0e24a, #df9019) !important;
             color: white;
-            box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.5);
         }
         button {
             padding: 12px 24px;
             font-size: 20px;
-            
             font-weight: bold;
             background: linear-gradient(135deg, #dbaf7c, #8f251d);
             border: 1px solid black;
+            box-shadow: 0 0 20px white, 0 0 30px cyan;
             border-radius: 10px;
             cursor: pointer;
-            color: rgb(255, 255, 255);
+            color: white;
             margin: 15px;
-            transition: all 0.3s;
-            box-shadow: 3px 3px 8px rgba(0, 0, 0, 0.3);
         }
         button:hover {
             background: linear-gradient(135deg, #ddb4c2, #ecacc2);
         }
-        
-        @media (max-width: 600px) {
-            .imgg{
-            background-image:url(img2.webp);
-            background-repeat: no-repeat;
-            background-size: contain;
-            background-position:center ;
-            height: 250px;
-            margin-top: 5px;
-            
+        .sButton {
+            background-color: #0e1620;
         }
-           
+        @media (max-width: 600px) {
             #game-board {
-                display: flex;
-                flex-wrap: wrap;
-                justify-content: center;
-                align-items: center;
-                gap: 5px;
-                width: 100%;
-                max-width: 320px;
-                
-                margin: 0 auto;
+                grid-template-columns: repeat(3, 80px);
+                grid-gap: 10px;
             }
             .card {
-                width: 70px;
-                height: 70px;
+                width: 80px;
+                height: 80px;
                 font-size: 24px;
             }
             button {
@@ -112,26 +92,29 @@
     </style>
 </head>
 <body>
-    <div class="imgg"></div>
-    <div id="landing-page">
-        <h2>🎉 Memory Match Game 🎉</h2>
-        <h3>Select a category:</h3>
-        <button onclick="startGame('fruits')">🍎 Fruits</button>
-        <button onclick="startGame('emojis')">😀 Emojis</button>
-        <button onclick="startGame('animals')">🐶 Animals</button>
-    </div>
-    
+    <h2>🎉 Memory Match Game 🎉</h2>
+    <h3>Select a category:</h3>
+    <button onclick="chooseCategory('fruits')">🍎 Fruits</button>
+    <button onclick="chooseCategory('emojis')">😀 Emojis</button>
+    <button onclick="chooseCategory('animals')">🐶 Animals</button>
+
     <div id="game-container" class="hidden">
+        <button id="start-game" class="sButton" onclick="startGame()">Start Game</button>
         <div id="score-timer">
-            <p>Score: <span id="score">0</span></p>
-            <p>Time Left: <span id="timer">30</span> seconds</p>
+            <h2>Score: <span id="score">0</span></h2>
+            <h2>Time Left: <span id="timer">50</span> seconds</h2>
         </div>
         <div id="game-board"></div>
         <button id="restart-button" onclick="restartGame()" class="hidden">Restart Game</button>
     </div>
-    
+
+    <audio id="flip-sound" src="music/flip.mp3"></audio>
+    <audio id="match-sound" src="music/match.mp3"></audio>
+    <audio id="gameover-sound" src="music/gameover.mp3"></audio>
+    <audio id="win-sound" src="music/win.mp3"></audio>
+
     <script>
-        const categories = {
+        let categories = {
             fruits: ['🍎', '🍌', '🍒', '🍉', '🍇', '🥭', '🍍', '🥝'],
             emojis: ['😀', '😂', '😍', '😎', '😜', '😡', '😱', '🤩'],
             animals: ['🐶', '🐱', '🐭', '🐹', '🐰', '🦊', '🐻', '🐼']
@@ -141,38 +124,68 @@
         let scoreDisplay = document.getElementById("score");
         let timerDisplay = document.getElementById("timer");
         let restartButton = document.getElementById("restart-button");
+        let startButton = document.getElementById("start-game");
+        let flipSound = document.getElementById("flip-sound");
+        let matchSound = document.getElementById("match-sound");
+        let gameOverSound = document.getElementById("gameover-sound");
+        let winSound = document.getElementById("win-sound");
         let score = 0;
         let timer;
+        let timeLeft = 50;
         let flippedCards = [];
+        let selectedCategory = "";
 
-        function startGame(category) {
-            document.getElementById("landing-page").classList.add("hidden");
+        function chooseCategory(category) {
+            selectedCategory = category;
             document.getElementById("game-container").classList.remove("hidden");
-            
-            let items = [...categories[category], ...categories[category]];
-            items.sort(() => Math.random() - 0.5);
-            
+            startButton.classList.remove("hidden");
             gameBoard.innerHTML = "";
+        }
+
+        function startGame() {
+            score = 0;
+            timeLeft = 50;
+            scoreDisplay.textContent = score;
+            timerDisplay.textContent = timeLeft;
+            flippedCards = [];
+
+            gameBoard.innerHTML = "";
+            let items = [...categories[selectedCategory], ...categories[selectedCategory]];
+            items.sort(() => Math.random() - 0.5);
+
             items.forEach(item => {
                 let card = document.createElement("div");
                 card.classList.add("card");
                 card.dataset.value = item;
+
+                let front = document.createElement("div");
+                front.classList.add("front");
+                front.textContent = item;
+
+                let back = document.createElement("div");
+                back.classList.add("back");
+                back.textContent = "❓";
+
+                card.appendChild(front);
+                card.appendChild(back);
                 card.addEventListener("click", handleCardClick);
                 gameBoard.appendChild(card);
             });
-            
-            score = 0;
-            scoreDisplay.textContent = score;
+
+            startButton.classList.add("hidden");
+            restartButton.classList.add("hidden");
             startTimer();
         }
 
         function handleCardClick(event) {
-            let card = event.target;
-            if (flippedCards.length < 2 && !card.classList.contains("matched") && !card.textContent) {
-                card.textContent = card.dataset.value;
+            let card = event.currentTarget;
+            if (flippedCards.length < 2 && !card.classList.contains("matched") && !card.classList.contains("flipped")) {
+                card.classList.add("flipped");
+                card.querySelector(".front").style.display = "block";
+                card.querySelector(".back").style.display = "none";
+                flipSound.play();
                 flippedCards.push(card);
             }
-            
             if (flippedCards.length === 2) {
                 setTimeout(checkMatch, 1000);
             }
@@ -183,24 +196,32 @@
                 flippedCards.forEach(card => card.classList.add("matched"));
                 score += 10;
                 scoreDisplay.textContent = score;
+                matchSound.play();
                 if (document.querySelectorAll('.matched').length === document.querySelectorAll('.card').length) {
-                    alert("🎉 Congratulations! You won! 🎉");
+                    clearInterval(timer);
+                    winSound.play();
+                    alert("🎉 You win! 🎉");
+                    restartButton.classList.remove("hidden");
                 }
             } else {
-                flippedCards.forEach(card => card.textContent = "");
+                flippedCards.forEach(card => {
+                    card.classList.remove("flipped");
+                    card.querySelector(".front").style.display = "none";
+                    card.querySelector(".back").style.display = "block";
+                });
             }
             flippedCards = [];
         }
 
         function startTimer() {
-            let timeLeft = 30;
-            timerDisplay.textContent = timeLeft;
+            clearInterval(timer);
             timer = setInterval(() => {
                 timeLeft--;
                 timerDisplay.textContent = timeLeft;
                 if (timeLeft === 0) {
                     clearInterval(timer);
-                    alert("⏳ Time's up! Game Over.");
+                    gameOverSound.play();
+                    alert("⏳ Time is up! Try again.");
                     restartButton.classList.remove("hidden");
                 }
             }, 1000);
